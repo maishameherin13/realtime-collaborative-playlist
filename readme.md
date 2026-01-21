@@ -117,3 +117,8 @@ git push
 # Create new branch for WebSocket
 git checkout -b feature/websocket-realtime
 
+
+13. initialise websocket
+14. start working on frontend
+npm install zustand
+
