@@ -101,3 +101,19 @@ npx prisma migrate dev --name init
 
 # Seed the database
 npx prisma db seed
+
+12. intialise crud playlist rest api endpoints
+git workflow:
+# Commit backend API
+git add .
+git commit -m "feat: implement REST API endpoints for playlist CRUD operations"
+git push -u origin feature/backend-api
+
+# Switch to develop and merge
+git checkout develop
+git merge feature/backend-api
+git push
+
+# Create new branch for WebSocket
+git checkout -b feature/websocket-realtime
+

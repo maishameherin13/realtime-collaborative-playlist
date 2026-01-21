@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import http from 'http';
+import { setupWebSocket } from './websocket';
 import { PrismaClient } from '@prisma/client';
 import { calculatePosition } from './utils/position';
 
@@ -10,6 +12,12 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
+const server = http.createServer(app);
+const { broadcast } = setupWebSocket(server);
+
+// Make broadcast available to routes
+app.set('broadcast', broadcast);
+
 // GET /api/tracks - get all tracks from library
 app.get('/api/tracks', async (req, res) => {
     try {
@@ -18,7 +26,7 @@ app.get('/api/tracks', async (req, res) => {
         });
         res.json(tracks);
     } catch(error){
-        res.status(500).json({ error: { code: 'UPDATE_FAILED', message: 'Failed to update track' }});
+        res.status(500).json({ error: { code: 'FETCH_FAILED', message: 'Failed to fetch tracks' }});
     }
 });
 
@@ -31,7 +39,7 @@ app.get('/api/playlist', async (req, res) => {
         });
         res.json(items);
     } catch (error) {
-        res.status(500).json({ error: { code: 'UPDATE_FAILED', message: 'Failed to update track' }}); 
+        res.status(500).json({ error: { code: 'FETCH_FAILED', message: 'Failed to fetch playlist' }}); 
     }
 });
 
@@ -69,6 +77,14 @@ app.post('/api/playlist', async (req, res) => {
             },
             include: { track: true }
         });
+
+        // Broadcast to all connected clients
+        const broadcastFn = req.app.get('broadcast');
+        broadcastFn({ 
+            type: 'track.added', 
+            item 
+        });
+
         res.status(201).json(item);
     } catch (error) {
         res.status(500).json({ error: { code: 'CREATE_FAILED', message: 'Failed to add track' }});
@@ -102,6 +118,22 @@ app.patch('/api/playlist/:id', async (req, res) => {
             data: updateData,
             include: { track: true}
         });
+
+        // Broadcast based on what changed
+        const broadcastFn = req.app.get('broadcast');
+        if (position !== undefined) {
+            broadcastFn({ 
+                type: 'track.moved', 
+                item 
+            });
+        }
+        if (isPlaying !== undefined) {
+            broadcastFn({ 
+                type: 'track.playing', 
+                id: item.id 
+            });
+        }
+
         res.json(item);
     } catch (error) {
         res.status(500).json({ error: { code: 'UPDATE_FAILED', message: 'Failed to update track' }});
@@ -127,6 +159,13 @@ app.post('/api/playlist/:id/vote', async (req, res) => {
             include: {track: true}
         });
 
+        // Broadcast vote change
+        const broadcastFn = req.app.get('broadcast');
+        broadcastFn({ 
+            type: 'track.voted', 
+            item: updated 
+        });
+
         res.json(updated);
     }catch(error){
         res.status(500).json({ error: { code: 'VOTE_FAILED', message: 'Failed to vote' }}); 
@@ -135,13 +174,25 @@ app.post('/api/playlist/:id/vote', async (req, res) => {
 
 // DELETE /api/playlist/:id - remove
 app.delete('/api/playlist/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    await prisma.playlistTrack.delete({ where: { id }});
-    res.status(204).send();
-  } catch (error) {
-    res.status(500).json({ error: { code: 'DELETE_FAILED', message: 'Failed to delete track' }});
-  }
+    try {
+        const { id } = req.params;
+        
+        // Broadcast before deleting
+        const broadcastFn = req.app.get('broadcast');
+        broadcastFn({ 
+            type: 'track.removed', 
+            id 
+        });
+
+        await prisma.playlistTrack.delete({ where: { id }});
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ error: { code: 'DELETE_FAILED', message: 'Failed to delete track' }});
+    }
 });
 
-app.listen(PORT, () => console.log(`Server on : ${PORT}`));
+// Start server with WebSocket support
+server.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`WebSocket available at ws://localhost:${PORT}/ws`);
+});
