@@ -1,5 +1,6 @@
 1. initialize npm for frontend
 npm iniy -y 
+
 2. setup nextjs
 npx create-next-app@latest client --typescript --tailwind --app
 //custom
@@ -16,8 +17,10 @@ npm install -D typescript @types/node @types/express nodemon ts-node
 
 5. initialise prisma w sqlite
 npx prisma init --datasource-provider sqlite
+
 6. Install Prisma 5 (stable version)
 npm install prisma@5.22.0 @prisma/client@5.22.0
+
 7. update scripts
 "scripts": {
   "dev": "nodemon src/index.ts",
@@ -28,3 +31,16 @@ npm install prisma@5.22.0 @prisma/client@5.22.0
   "prisma:seed": "ts-node prisma/seed.ts"
 }
 8. update prisma/schema.prisma with database schema
+
+9. initialise github
+# Initialize git
+git init
+# Create .gitignore file
+# initial commit
+git add .
+git commit -m "Initial project setup: Next.js frontend + Express backend"
+# connect to 
+git remote add origin https://github.com/maishameherin13/realtime-collaborative-playlist.git
+git branch -M main
+git push -u origin main
+
