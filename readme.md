@@ -44,3 +44,60 @@ git remote add origin https://github.com/maishameherin13/realtime-collaborative-
 git branch -M main
 git push -u origin main
 
+10. git branch for clean code
+main (production-ready)
+└── develop (integration branch)
+    ├── feature/database-setup
+    ├── feature/backend-api
+    ├── feature/websocket-realtime
+    ├── feature/frontend-ui
+    ├── feature/drag-drop
+    └── feature/testing-docs
+# Day 1
+git checkout -b feature/database-setup
+# ... work on Prisma schema + seed data
+git commit -m "Complete database models and seed 40 tracks"
+git push
+
+git checkout -b feature/backend-api
+# ... work on Express routes
+git commit -m "Implement REST API endpoints"
+git push
+
+# Day 2
+git checkout -b feature/websocket-realtime
+# ... work on WebSocket
+git commit -m "Add WebSocket for realtime sync"
+git push
+
+git checkout -b feature/frontend-ui
+# ... work on React components
+git commit -m "Build playlist and library UI components"
+git push
+
+# Day 3
+git checkout -b feature/drag-drop
+# ... work on drag & drop
+git commit -m "Implement drag-drop with position algorithm"
+git push
+
+git checkout -b feature/testing-docs
+# ... write tests and README
+git commit -m "Add tests and comprehensive documentation"
+git push
+
+# Final merge to main
+git checkout main
+git merge develop
+git push
+
+11. seeding data
+/prisma/seed.ts
+# Generate Prisma client
+npx prisma generate
+
+# Run migration
+npx prisma migrate dev --name init
+
+# Seed the database
+npx prisma db seed
