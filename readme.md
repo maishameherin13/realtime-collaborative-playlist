@@ -124,3 +124,9 @@ npm install zustand
 
 15. drag and drop feature:
 npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+
+
+16. testing
+npm install --save-dev jest @types/jest ts-jest supertest @types/supertest
+npm install --save-dev ws-mock-client
+

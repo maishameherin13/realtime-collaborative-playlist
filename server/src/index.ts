@@ -215,7 +215,7 @@ app.post('/api/playlist/:id/vote', async (req, res) => {
 });
 
 
-//GET /api/history -get recently played tracks
+//GET /api/history - get recently played tracks
 app.get('/api/history', async (req, res) => {
     try {
         const limit = parseInt(req.query.limit as string) || 50;
@@ -279,6 +279,17 @@ app.delete('/api/playlist/:id', async (req, res) => {
         res.status(500).json({ error: { code: 'DELETE_FAILED', message: 'Failed to delete track' }});
     }
 });
+
+
+export { app, server };
+
+// Only start server if not in test mode
+if (process.env.NODE_ENV !== 'test' && require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`WebSocket available at ws://localhost:${PORT}/ws`);
+  });
+}
 
 // Start server with WebSocket support
 server.listen(PORT, () => {
