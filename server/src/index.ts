@@ -154,6 +154,34 @@ app.patch('/api/playlist/:id', async (req, res) => {
   }
 });
 
+app.post('/api/playback/pause', async (req, res) => {
+    try {
+        const broadcastFn = req.app.get('broadcast');
+        broadcastFn({
+            type: 'playback.paused'
+        });
+
+        res.json({ status: 'paused' });
+    } catch(error) {
+        console.log('Pause error', error);
+        res.status(500).json({ error: { code: 'PAUSE_FAILED', message: 'Failed to pause' }});
+    }
+});
+
+//POST /api/playback/resume
+app.post('/api/playback/resume', async (req, res) => {
+    try {
+        const broadcastFn = req.app.get('broadcast');
+        broadcastFn({
+            type: 'playback.resumed'
+        });
+        res.json({ status: 'playing'});
+    } catch(error){
+        console.error('Resume error:', error);
+        res.status(500).json({ error: { code: 'RESUME_FAILED', message: 'Failed to resume' }});
+    }
+})
+
 // POST /api/playlist/:id/vote - vote
 app.post('/api/playlist/:id/vote', async (req, res) => {
     try {
