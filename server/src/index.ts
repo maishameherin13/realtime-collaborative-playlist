@@ -93,51 +93,65 @@ app.post('/api/playlist', async (req, res) => {
 
 // PATCH /api/playlist/:id - update position/playing
 app.patch('/api/playlist/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { position, isPlaying } = req.body;
+  try {
+    const { id } = req.params;
+    const { position, isPlaying } = req.body;
 
-        const updateData: any = {};
+    console.log('PATCH /api/playlist/:id called');
+    console.log('  id:', id);
+    console.log('  body:', req.body);
 
-        if (position !== undefined) updateData.position = position;
-        if (isPlaying !== undefined) {
-            updateData.isPlaying = isPlaying;
+    const updateData: any = {};
 
-            //if playing, unset all other tracks
-            if (isPlaying){
-                await prisma.playlistTrack.updateMany({
-                    where: { isPlaying: true },
-                    data: { isPlaying: false}
-                });
-                updateData.playedAt = new Date();
-            }
-        }
+    if (position !== undefined) updateData.position = position;
+    if (isPlaying !== undefined) {
+      updateData.isPlaying = isPlaying;
 
-        const item = await prisma.playlistTrack.update({
-            where: { id },
-            data: updateData,
-            include: { track: true}
+      // If setting to playing, unset all others
+      if (isPlaying) {
+        console.log('  Setting isPlaying=true, unsetting all others...');
+        await prisma.playlistTrack.updateMany({
+          where: { isPlaying: true },
+          data: { isPlaying: false }
         });
-
-        // Broadcast based on what changed
-        const broadcastFn = req.app.get('broadcast');
-        if (position !== undefined) {
-            broadcastFn({ 
-                type: 'track.moved', 
-                item 
-            });
-        }
-        if (isPlaying !== undefined) {
-            broadcastFn({ 
-                type: 'track.playing', 
-                id: item.id 
-            });
-        }
-
-        res.json(item);
-    } catch (error) {
-        res.status(500).json({ error: { code: 'UPDATE_FAILED', message: 'Failed to update track' }});
+        updateData.playedAt = new Date();
+      }
     }
+
+    console.log('  Updating item with:', updateData);
+    const item = await prisma.playlistTrack.update({
+      where: { id },
+      data: updateData,
+      include: { track: true }
+    });
+
+    console.log('  Updated item:', item);
+
+    // Broadcast based on what changed
+    const broadcastFn = req.app.get('broadcast');
+    
+    if (position !== undefined) {
+      console.log('  Broadcasting track.moved');
+      broadcastFn({ 
+        type: 'track.moved', 
+        item 
+      });
+    }
+    
+    if (isPlaying !== undefined) {
+      console.log('  Broadcasting track.playing with id:', item.id);
+      broadcastFn({ 
+        type: 'track.playing', 
+        id: item.id,
+        item
+      });
+    }
+
+    res.json(item);
+  } catch (error) {
+    console.error('PATCH error:', error);
+    res.status(500).json({ error: { code: 'UPDATE_FAILED', message: 'Failed to update track' }});
+  }
 });
 
 // POST /api/playlist/:id/vote - vote

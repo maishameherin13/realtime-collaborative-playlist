@@ -122,3 +122,5 @@ git checkout -b feature/websocket-realtime
 14. start working on frontend
 npm install zustand
 
+15. drag and drop feature:
+npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
