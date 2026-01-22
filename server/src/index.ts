@@ -214,6 +214,53 @@ app.post('/api/playlist/:id/vote', async (req, res) => {
     }
 });
 
+
+//GET /api/history -get recently played tracks
+app.get('/api/history', async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit as string) || 50;
+
+        const history = await prisma.recentlyPlayed.findMany({
+            take: limit,
+            orderBy: {playedAt: 'desc'},
+            include: {track: true}
+        });
+        res.json(history);
+    } catch(error){
+        console.error('Get history error:', error);
+        res.status(500).json({ 
+        error: { code: 'FETCH_FAILED', message: 'Failed to fetch history' }
+        });
+    }
+});
+
+//POST /api/history when track starts playing
+app.post('/api/history', async (req, res) => {
+    try {
+        const {trackId, playedBy} = req.body;
+
+        const entry = await prisma.recentlyPlayed.create({
+            data: {
+                trackId,
+                playedBy
+            },
+            include: { track: true }
+        });
+
+        //broadcast to all clients
+        const broadcastFn = req.app.get('broadcast');
+        broadcastFn({
+            type: 'history.added',
+            entry
+        });
+        res.json(entry);
+    } catch (error){
+        console.error('Add to history error:', error);
+        res.status(500).json({
+        error: { code: 'ADD_FAILED', message: 'Failed to add to history' }
+        });
+    }
+}); 
 // DELETE /api/playlist/:id - remove
 app.delete('/api/playlist/:id', async (req, res) => {
     try {
