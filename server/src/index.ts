@@ -290,9 +290,3 @@ if (process.env.NODE_ENV !== 'test' && require.main === module) {
     console.log(`WebSocket available at ws://localhost:${PORT}/ws`);
   });
 }
-
-// Start server with WebSocket support
-server.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`WebSocket available at ws://localhost:${PORT}/ws`);
-});
