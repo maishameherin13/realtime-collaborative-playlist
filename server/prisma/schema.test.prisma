@@ -1,0 +1,46 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./test.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Track {
+  id               String   @id @default(uuid())
+  title            String
+  artist           String
+  album            String
+  durationSeconds  Int
+  genre            String
+  coverUrl         String?
+  createdAt        DateTime @default(now())
+  
+  playlistTracks   PlaylistTrack[]
+  recentlyPlayed   RecentlyPlayed[]
+}
+
+model PlaylistTrack {
+  id        String   @id @default(uuid())
+  trackId   String
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  position  Float
+  votes     Int      @default(0)
+  addedBy   String
+  addedAt   DateTime @default(now())
+  isPlaying Boolean  @default(false)
+  playedAt  DateTime?
+
+  @@index([position])
+}
+
+model RecentlyPlayed {
+  id        String   @id @default(uuid())
+  trackId   String
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  playedBy  String
+  playedAt  DateTime @default(now())
+
+  @@index([playedAt])
+}

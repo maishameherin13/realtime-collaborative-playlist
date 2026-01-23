@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 const server = http.createServer(app);
-const { broadcast } = setupWebSocket(server);
+const { broadcast } = setupWebSocket(server, prisma);
 
 // Make broadcast available to routes
 app.set('broadcast', broadcast);
@@ -182,6 +182,25 @@ app.post('/api/playback/resume', async (req, res) => {
     }
 })
 
+// POST /api/playlist/auto-sort - toggle auto-sort by votes
+app.post('/api/playlist/auto-sort', async (req, res) => {
+    try {
+        const { enabled } = req.body;
+
+        // Broadcast auto-sort state to all clients
+        const broadcastFn = req.app.get('broadcast');
+        broadcastFn({
+            type: 'playlist.autoSortToggled',
+            enabled
+        });
+
+        res.json({ autoSort: enabled });
+    } catch(error){
+        console.error('Auto-sort toggle error:', error);
+        res.status(500).json({ error: { code: 'AUTO_SORT_FAILED', message: 'Failed to toggle auto-sort' }});
+    }
+});
+
 // POST /api/playlist/:id/vote - vote
 app.post('/api/playlist/:id/vote', async (req, res) => {
     try {
@@ -214,6 +233,74 @@ app.post('/api/playlist/:id/vote', async (req, res) => {
     }
 });
 
+
+//GET /api/history - get recently played tracks
+app.get('/api/history', async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit as string) || 50;
+
+        const history = await prisma.recentlyPlayed.findMany({
+            take: limit,
+            orderBy: {playedAt: 'desc'},
+            include: {track: true}
+        });
+        res.json(history);
+    } catch(error){
+        console.error('Get history error:', error);
+        res.status(500).json({ 
+        error: { code: 'FETCH_FAILED', message: 'Failed to fetch history' }
+        });
+    }
+});
+
+//POST /api/history when track starts playing
+app.post('/api/history', async (req, res) => {
+    try {
+        const {trackId, playedBy} = req.body;
+
+        // Check if this exact track was added in the last 60 seconds to prevent duplicates
+        const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+        const recentEntry = await prisma.recentlyPlayed.findFirst({
+            where: {
+                trackId,
+                playedBy,
+                playedAt: {
+                    gte: oneMinuteAgo
+                }
+            }
+        });
+
+        // If found, return the existing entry without creating a duplicate
+        if (recentEntry) {
+            const entryWithTrack = await prisma.recentlyPlayed.findUnique({
+                where: { id: recentEntry.id },
+                include: { track: true }
+            });
+            return res.json(entryWithTrack);
+        }
+
+        const entry = await prisma.recentlyPlayed.create({
+            data: {
+                trackId,
+                playedBy
+            },
+            include: { track: true }
+        });
+
+        //broadcast to all clients
+        const broadcastFn = req.app.get('broadcast');
+        broadcastFn({
+            type: 'history.added',
+            entry
+        });
+        res.json(entry);
+    } catch (error){
+        console.error('Add to history error:', error);
+        res.status(500).json({
+        error: { code: 'ADD_FAILED', message: 'Failed to add to history' }
+        });
+    }
+}); 
 // DELETE /api/playlist/:id - remove
 app.delete('/api/playlist/:id', async (req, res) => {
     try {
@@ -233,8 +320,13 @@ app.delete('/api/playlist/:id', async (req, res) => {
     }
 });
 
-// Start server with WebSocket support
-server.listen(PORT, () => {
+
+export { app, server };
+
+// Only start server if not in test mode
+if (process.env.NODE_ENV !== 'test' && require.main === module) {
+  server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
     console.log(`WebSocket available at ws://localhost:${PORT}/ws`);
-});
+  });
+}
