@@ -76,7 +76,7 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/playlist.git
+git clone https://github.com/maishameherin13/realtime-collaborative-playlist.git
 cd playlist
 ```
 
@@ -134,7 +134,7 @@ npm run dev
 
 ### 6. Open the Application
 
-Navigate to [http://localhost:5173](http://localhost:5173) in your browser.
+Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
@@ -199,7 +199,7 @@ playlist/
 cd server
 npm run dev
 
-# Frontend (runs on http://localhost:5173)
+# Frontend (runs on http://localhost:3000)
 cd client
 npm run dev
 ```
@@ -412,64 +412,27 @@ Tests use:
   - Protect WebSocket connections with token validation
 - **Benefit**: Personalized experience, track contributions, prevent abuse
 
-#### 3. Queue System
-- **What**: Separate "Up Next" queue from main playlist
-- **Implementation**:
-  - Add `Queue` model with ordering
-  - New endpoints for queue management
-  - UI section for queued tracks
-  - Auto-play from queue after current track
-- **Benefit**: Better playback control, temporary additions
 
-### Medium Priority
-
-#### 4. Search and Filtering
+#### 3. Search and Filtering
 - Genre filter, artist search, duration range
 - Debounced search input with highlighting
 - Filter by "recently played"
 
-#### 5. Persistent Playback State
+#### 4. Persistent Playback State
 - Save current track position to database
 - Resume from last position on page refresh
 - Sync playback state across devices for same user
 
-#### 6. Enhanced Voting
-- Limit one vote per user per track
-- Visual indicator of user's vote
-- Auto-reorder playlist by vote count
 
-#### 7. Playlist History
-- View previously played tracks
-- Play count statistics
-- Most popular tracks
-
-### Nice-to-Have
-
-#### 8. Social Features
+#### 5. Social Features
 - Display active users
 - User avatars and names
 - Chat/comments on tracks
 
-#### 9. Multiple Playlists
+#### 6. Multiple Playlists
 - Create named playlists
 - Switch between playlists
 - Public/private playlist settings
-
-#### 10. Audio Visualization
-- Animated equalizer bars
-- Waveform display
-- Album art blur background
-
-#### 11. Mobile Responsiveness
-- Touch-friendly drag-and-drop
-- Optimized layout for small screens
-- PWA support
-
-#### 12. Performance Optimizations
-- Virtualized scrolling for large libraries
-- Debounced WebSocket messages
-- React Query for server state caching
-- Image lazy loading
 
 ---
 
