@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 const server = http.createServer(app);
-const { broadcast } = setupWebSocket(server);
+const { broadcast } = setupWebSocket(server, prisma);
 
 // Make broadcast available to routes
 app.set('broadcast', broadcast);
@@ -182,6 +182,25 @@ app.post('/api/playback/resume', async (req, res) => {
     }
 })
 
+// POST /api/playlist/auto-sort - toggle auto-sort by votes
+app.post('/api/playlist/auto-sort', async (req, res) => {
+    try {
+        const { enabled } = req.body;
+
+        // Broadcast auto-sort state to all clients
+        const broadcastFn = req.app.get('broadcast');
+        broadcastFn({
+            type: 'playlist.autoSortToggled',
+            enabled
+        });
+
+        res.json({ autoSort: enabled });
+    } catch(error){
+        console.error('Auto-sort toggle error:', error);
+        res.status(500).json({ error: { code: 'AUTO_SORT_FAILED', message: 'Failed to toggle auto-sort' }});
+    }
+});
+
 // POST /api/playlist/:id/vote - vote
 app.post('/api/playlist/:id/vote', async (req, res) => {
     try {
@@ -238,6 +257,27 @@ app.get('/api/history', async (req, res) => {
 app.post('/api/history', async (req, res) => {
     try {
         const {trackId, playedBy} = req.body;
+
+        // Check if this exact track was added in the last 60 seconds to prevent duplicates
+        const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+        const recentEntry = await prisma.recentlyPlayed.findFirst({
+            where: {
+                trackId,
+                playedBy,
+                playedAt: {
+                    gte: oneMinuteAgo
+                }
+            }
+        });
+
+        // If found, return the existing entry without creating a duplicate
+        if (recentEntry) {
+            const entryWithTrack = await prisma.recentlyPlayed.findUnique({
+                where: { id: recentEntry.id },
+                include: { track: true }
+            });
+            return res.json(entryWithTrack);
+        }
 
         const entry = await prisma.recentlyPlayed.create({
             data: {

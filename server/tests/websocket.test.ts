@@ -20,7 +20,7 @@ describe('WebSocket Realtime Tests', () => {
     // Create test server
     testApp = express();
     testServer = http.createServer(testApp);
-    setupWebSocket(testServer);
+    setupWebSocket(testServer, prisma);
 
     // Start test server
     await new Promise<void>((resolve) => {
