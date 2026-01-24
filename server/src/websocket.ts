@@ -34,7 +34,8 @@ export function setupWebSocket(server: Server, prisma: PrismaClient) {
       console.error('Failed to send history to new client:', error);
     }
 
-    // Send heartbeat every 30 seconds
+    // Send heartbeat every 30 seconds (configurable via WS_PING_INTERVAL)
+    const pingInterval = parseInt(process.env.WS_PING_INTERVAL || '30000');
     const heartbeat = setInterval(() => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
@@ -42,7 +43,7 @@ export function setupWebSocket(server: Server, prisma: PrismaClient) {
           ts: new Date().toISOString()
         }));
       }
-    }, 30000);
+    }, pingInterval);
 
     ws.on('close', () => {
       console.log('Client disconnected');
